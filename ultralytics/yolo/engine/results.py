@@ -1,6 +1,6 @@
 # Ultralytics YOLO 🚀, GPL-3.0 license
 """
-Ultralytics Results, Boxes and Masks classes for handling inference results
+Ultralytics Results, Boxes and Masks classes for handling inference results.
 
 Usage: See https://docs.ultralytics.com/predict/
 """
@@ -48,7 +48,7 @@ class Results:
         self.probs = probs if probs is not None else None
         self.names = names
         self.path = path
-        self._keys = [k for k in ('boxes', 'masks', 'probs') if getattr(self, k) is not None]
+        self._keys = [k for k in ("boxes", "masks", "probs") if getattr(self, k) is not None]
 
     def pandas(self):
         pass
@@ -107,7 +107,7 @@ class Results:
         name = self.__class__.__name__
         raise AttributeError(f"'{name}' object has no attribute '{attr}'. See valid attributes below.\n{self.__doc__}")
 
-    def plot(self, show_conf=True, line_width=None, font_size=None, font='Arial.ttf', pil=False, example='abc'):
+    def plot(self, show_conf=True, line_width=None, font_size=None, font="Arial.ttf", pil=False, example="abc"):
         """
         Plots the detection results on an input RGB image. Accepts a numpy array (cv2) or a PIL Image.
 
@@ -131,7 +131,7 @@ class Results:
             for d in reversed(boxes):
                 cls, conf = d.cls.squeeze(), d.conf.squeeze()
                 c = int(cls)
-                label = (f'{names[c]}' if names else f'{c}') + (f'{conf:.2f}' if show_conf else '')
+                label = (f"{names[c]}" if names else f"{c}") + (f"{conf:.2f}" if show_conf else "")
                 annotator.box_label(d.xyxy.squeeze(), label, color=colors(c, True))
 
         if masks is not None:
@@ -185,12 +185,15 @@ class Boxes:
         if boxes.ndim == 1:
             boxes = boxes[None, :]
         n = boxes.shape[-1]
-        assert n in (6, 7), f'expected `n` in [6, 7], but got {n}'  # xyxy, (track_id), conf, cls
+        assert n in (6, 7), f"expected `n` in [6, 7], but got {n}"  # xyxy, (track_id), conf, cls
         # TODO
         self.is_track = n == 7
         self.boxes = boxes
-        self.orig_shape = torch.as_tensor(orig_shape, device=boxes.device) if isinstance(boxes, torch.Tensor) \
+        self.orig_shape = (
+            torch.as_tensor(orig_shape, device=boxes.device)
+            if isinstance(boxes, torch.Tensor)
             else np.asarray(orig_shape)
+        )
 
     @property
     def xyxy(self):
@@ -236,16 +239,15 @@ class Boxes:
         return Boxes(self.boxes.to(*args, **kwargs), self.orig_shape)
 
     def pandas(self):
-        LOGGER.info('results.pandas() method not yet implemented')
-        '''
-        new = copy(self)  # return copy
-        ca = 'xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class', 'name'  # xyxy columns
-        cb = 'xcenter', 'ycenter', 'width', 'height', 'confidence', 'class', 'name'  # xywh columns
-        for k, c in zip(['xyxy', 'xyxyn', 'xywh', 'xywhn'], [ca, ca, cb, cb]):
-            a = [[x[:5] + [int(x[5]), self.names[int(x[5])]] for x in x.tolist()] for x in getattr(self, k)]  # update
-            setattr(new, k, [pd.DataFrame(x, columns=c) for x in a])
-        return new
-        '''
+        LOGGER.info("results.pandas() method not yet implemented")
+        """
+        New = copy(self)  # return copy ca = 'xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class', 'name'  # xyxy
+        columns cb = 'xcenter', 'ycenter', 'width', 'height', 'confidence', 'class', 'name'  # xywh columns for k, c in
+        zip(['xyxy', 'xyxyn', 'xywh', 'xywhn'], [ca, ca, cb, cb]):
+
+        a = [[x[:5] + [int(x[5]), self.names[int(x[5])]] for x in x.tolist()] for x in getattr(self, k)]  # update
+        setattr(new, k, [pd.DataFrame(x, columns=c) for x in a]) return new
+        """
 
     @property
     def shape(self):
@@ -262,11 +264,13 @@ class Boxes:
         return self.boxes.__str__()
 
     def __repr__(self):
-        return (f'{self.__class__.__module__}.{self.__class__.__name__}\n'
-                f'type:  {self.boxes.__class__.__module__}.{self.boxes.__class__.__name__}\n'
-                f'shape: {self.boxes.shape}\n'
-                f'dtype: {self.boxes.dtype}\n'
-                f'{self.boxes.__repr__()}')
+        return (
+            f"{self.__class__.__module__}.{self.__class__.__name__}\n"
+            f"type:  {self.boxes.__class__.__module__}.{self.boxes.__class__.__name__}\n"
+            f"shape: {self.boxes.shape}\n"
+            f"dtype: {self.boxes.dtype}\n"
+            f"{self.boxes.__repr__()}"
+        )
 
     def __getitem__(self, idx):
         return Boxes(self.boxes[idx], self.orig_shape)
@@ -312,7 +316,8 @@ class Masks:
     def segments(self):
         return [
             ops.scale_segments(self.masks.shape[1:], x, self.orig_shape, normalize=True)
-            for x in ops.masks2segments(self.masks)]
+            for x in ops.masks2segments(self.masks)
+        ]
 
     @property
     def shape(self):
@@ -341,11 +346,13 @@ class Masks:
         return self.masks.__str__()
 
     def __repr__(self):
-        return (f'{self.__class__.__module__}.{self.__class__.__name__}\n'
-                f'type:  {self.masks.__class__.__module__}.{self.masks.__class__.__name__}\n'
-                f'shape: {self.masks.shape}\n'
-                f'dtype: {self.masks.dtype}\n'
-                f'{self.masks.__repr__()}')
+        return (
+            f"{self.__class__.__module__}.{self.__class__.__name__}\n"
+            f"type:  {self.masks.__class__.__module__}.{self.masks.__class__.__name__}\n"
+            f"shape: {self.masks.shape}\n"
+            f"dtype: {self.masks.dtype}\n"
+            f"{self.masks.__repr__()}"
+        )
 
     def __getitem__(self, idx):
         return Masks(self.masks[idx], self.orig_shape)

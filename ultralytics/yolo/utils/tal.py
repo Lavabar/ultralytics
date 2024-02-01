@@ -7,11 +7,12 @@ import torch.nn.functional as F
 from .checks import check_version
 from .metrics import bbox_iou
 
-TORCH_1_10 = check_version(torch.__version__, '1.10.0')
+TORCH_1_10 = check_version(torch.__version__, "1.10.0")
 
 
 def select_candidates_in_gts(xy_centers, gt_bboxes, eps=1e-9):
-    """select the positive anchor center in gt
+    """
+    Select the positive anchor center in gt.
 
     Args:
         xy_centers (Tensor): shape(h*w, 4)
@@ -28,8 +29,8 @@ def select_candidates_in_gts(xy_centers, gt_bboxes, eps=1e-9):
 
 
 def select_highest_overlaps(mask_pos, overlaps, n_max_boxes):
-    """if an anchor box is assigned to multiple gts,
-        the one with the highest iou will be selected.
+    """
+    If an anchor box is assigned to multiple gts, the one with the highest iou will be selected.
 
     Args:
         mask_pos (Tensor): shape(b, n_max_boxes, h*w)
@@ -54,7 +55,6 @@ def select_highest_overlaps(mask_pos, overlaps, n_max_boxes):
 
 
 class TaskAlignedAssigner(nn.Module):
-
     def __init__(self, topk=13, num_classes=80, alpha=1.0, beta=6.0, eps=1e-9):
         super().__init__()
         self.topk = topk
@@ -87,12 +87,17 @@ class TaskAlignedAssigner(nn.Module):
 
         if self.n_max_boxes == 0:
             device = gt_bboxes.device
-            return (torch.full_like(pd_scores[..., 0], self.bg_idx).to(device), torch.zeros_like(pd_bboxes).to(device),
-                    torch.zeros_like(pd_scores).to(device), torch.zeros_like(pd_scores[..., 0]).to(device),
-                    torch.zeros_like(pd_scores[..., 0]).to(device))
+            return (
+                torch.full_like(pd_scores[..., 0], self.bg_idx).to(device),
+                torch.zeros_like(pd_bboxes).to(device),
+                torch.zeros_like(pd_scores).to(device),
+                torch.zeros_like(pd_scores[..., 0]).to(device),
+                torch.zeros_like(pd_scores[..., 0]).to(device),
+            )
 
-        mask_pos, align_metric, overlaps = self.get_pos_mask(pd_scores, pd_bboxes, gt_labels, gt_bboxes, anc_points,
-                                                             mask_gt)
+        mask_pos, align_metric, overlaps = self.get_pos_mask(
+            pd_scores, pd_bboxes, gt_labels, gt_bboxes, anc_points, mask_gt
+        )
 
         target_gt_idx, fg_mask, mask_pos = select_highest_overlaps(mask_pos, overlaps, self.n_max_boxes)
 
@@ -198,7 +203,7 @@ def make_anchors(feats, strides, grid_cell_offset=0.5):
         _, _, h, w = feats[i].shape
         sx = torch.arange(end=w, device=device, dtype=dtype) + grid_cell_offset  # shift x
         sy = torch.arange(end=h, device=device, dtype=dtype) + grid_cell_offset  # shift y
-        sy, sx = torch.meshgrid(sy, sx, indexing='ij') if TORCH_1_10 else torch.meshgrid(sy, sx)
+        sy, sx = torch.meshgrid(sy, sx, indexing="ij") if TORCH_1_10 else torch.meshgrid(sy, sx)
         anchor_points.append(torch.stack((sx, sy), -1).view(-1, 2))
         stride_tensor.append(torch.full((h * w, 1), stride, dtype=dtype, device=device))
     return torch.cat(anchor_points), torch.cat(stride_tensor)

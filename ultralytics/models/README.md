@@ -1,19 +1,10 @@
 ## Models
 
-Welcome to the Ultralytics Models directory! Here you will find a wide variety of pre-configured model configuration
-files (`*.yaml`s) that can be used to create custom YOLO models. The models in this directory have been expertly crafted
-and fine-tuned by the Ultralytics team to provide the best performance for a wide range of object detection and image
-segmentation tasks.
+Welcome to the Ultralytics Models directory! Here you will find a wide variety of pre-configured model configuration files (`*.yaml`s) that can be used to create custom YOLO models. The models in this directory have been expertly crafted and fine-tuned by the Ultralytics team to provide the best performance for a wide range of object detection and image segmentation tasks.
 
-These model configurations cover a wide range of scenarios, from simple object detection to more complex tasks like
-instance segmentation and object tracking. They are also designed to run efficiently on a variety of hardware platforms,
-from CPUs to GPUs. Whether you are a seasoned machine learning practitioner or just getting started with YOLO, this
-directory provides a great starting point for your custom model development needs.
+These model configurations cover a wide range of scenarios, from simple object detection to more complex tasks like instance segmentation and object tracking. They are also designed to run efficiently on a variety of hardware platforms, from CPUs to GPUs. Whether you are a seasoned machine learning practitioner or just getting started with YOLO, this directory provides a great starting point for your custom model development needs.
 
-To get started, simply browse through the models in this directory and find one that best suits your needs. Once you've
-selected a model, you can use the provided `*.yaml` file to train and deploy your custom YOLO model with ease. See full
-details at the Ultralytics [Docs](https://docs.ultralytics.com), and if you need help or have any questions, feel free
-to reach out to the Ultralytics team for support. So, don't wait, start creating your custom YOLO model now!
+To get started, simply browse through the models in this directory and find one that best suits your needs. Once you've selected a model, you can use the provided `*.yaml` file to train and deploy your custom YOLO model with ease. See full details at the Ultralytics [Docs](https://docs.ultralytics.com), and if you need help or have any questions, feel free to reach out to the Ultralytics team for support. So, don't wait, start creating your custom YOLO model now!
 
 ### Usage
 
@@ -23,8 +14,7 @@ Model `*.yaml` files may be used directly in the Command Line Interface (CLI) wi
 yolo task=detect mode=train model=yolov8n.yaml data=coco128.yaml epochs=100
 ```
 
-They may also be used directly in a Python environment, and accepts the same
-[arguments](https://docs.ultralytics.com/cfg/) as in the CLI example above:
+They may also be used directly in a Python environment, and accepts the same [arguments](https://docs.ultralytics.com/cfg/) as in the CLI example above:
 
 ```python
 from ultralytics import YOLO
@@ -37,16 +27,13 @@ model.train(data="coco128.yaml", epochs=100)  # train the model
 
 ## Pre-trained Model Architectures
 
-Ultralytics supports many model architectures. Visit [models](#) page to view detailed information and usage.
-Any of these models can be used by loading their configs or pretrained checkpoints if available.
+Ultralytics supports many model architectures. Visit [models](#) page to view detailed information and usage. Any of these models can be used by loading their configs or pretrained checkpoints if available.
 
 <b>What to add your model architecture?</b> [Here's](#) how you can contribute
 
 ### 1. YOLOv8
 
-**About** - Cutting edge Detection, Segmentation and Classification models developed by Ultralytics. </br>
-**Citation** -
-Available Models:
+**About** - Cutting edge Detection, Segmentation and Classification models developed by Ultralytics. </br> **Citation** - Available Models:
 
 - Detection - `yolov8n`, `yolov8s`, `yolov8m`, `yolov8l`, `yolov8x`
 - Instance Segmentation - `yolov8n-seg`, `yolov8s-seg`, `yolov8m-seg`, `yolov8l-seg`, `yolov8x-seg`
@@ -88,9 +75,7 @@ Available Models:
 
 ### 2. YOLOv5u
 
-**About** - Anchor-free YOLOv5 models with new detection head and better speed-accuracy tradeoff </br>
-**Citation** -
-Available Models:
+**About** - Anchor-free YOLOv5 models with new detection head and better speed-accuracy tradeoff </br> **Citation** - Available Models:
 
 - Detection - `yolov5nu`, `yolov5su`, `yolov5mu`, `yolov5lu`, `yolov5xu`
 

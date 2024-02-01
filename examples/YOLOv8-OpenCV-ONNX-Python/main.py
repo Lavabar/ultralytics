@@ -4,21 +4,21 @@ import numpy as np
 from ultralytics.yolo.utils import ROOT, yaml_load
 from ultralytics.yolo.utils.checks import check_yaml
 
-CLASSES = yaml_load(check_yaml('coco128.yaml'))['names']
+CLASSES = yaml_load(check_yaml("coco128.yaml"))["names"]
 
 colors = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
 
 def draw_bounding_box(img, class_id, confidence, x, y, x_plus_w, y_plus_h):
-    label = f'{CLASSES[class_id]} ({confidence:.2f})'
+    label = f"{CLASSES[class_id]} ({confidence:.2f})"
     color = colors[class_id]
     cv2.rectangle(img, (x, y), (x_plus_w, y_plus_h), color, 2)
     cv2.putText(img, label, (x - 10, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
 
 def main():
-    model: cv2.dnn.Net = cv2.dnn.readNetFromONNX('yolov8n.onnx')
-    original_image: np.ndarray = cv2.imread(str(ROOT / 'assets/bus.jpg'))
+    model: cv2.dnn.Net = cv2.dnn.readNetFromONNX("yolov8n.onnx")
+    original_image: np.ndarray = cv2.imread(str(ROOT / "assets/bus.jpg"))
     [height, width, _] = original_image.shape
     length = max((height, width))
     image = np.zeros((length, length, 3), np.uint8)
@@ -41,8 +41,11 @@ def main():
         (minScore, maxScore, minClassLoc, (x, maxClassIndex)) = cv2.minMaxLoc(classes_scores)
         if maxScore >= 0.25:
             box = [
-                outputs[0][i][0] - (0.5 * outputs[0][i][2]), outputs[0][i][1] - (0.5 * outputs[0][i][3]),
-                outputs[0][i][2], outputs[0][i][3]]
+                outputs[0][i][0] - (0.5 * outputs[0][i][2]),
+                outputs[0][i][1] - (0.5 * outputs[0][i][3]),
+                outputs[0][i][2],
+                outputs[0][i][3],
+            ]
             boxes.append(box)
             scores.append(maxScore)
             class_ids.append(maxClassIndex)
@@ -54,21 +57,29 @@ def main():
         index = result_boxes[i]
         box = boxes[index]
         detection = {
-            'class_id': class_ids[index],
-            'class_name': CLASSES[class_ids[index]],
-            'confidence': scores[index],
-            'box': box,
-            'scale': scale}
+            "class_id": class_ids[index],
+            "class_name": CLASSES[class_ids[index]],
+            "confidence": scores[index],
+            "box": box,
+            "scale": scale,
+        }
         detections.append(detection)
-        draw_bounding_box(original_image, class_ids[index], scores[index], round(box[0] * scale), round(box[1] * scale),
-                          round((box[0] + box[2]) * scale), round((box[1] + box[3]) * scale))
+        draw_bounding_box(
+            original_image,
+            class_ids[index],
+            scores[index],
+            round(box[0] * scale),
+            round(box[1] * scale),
+            round((box[0] + box[2]) * scale),
+            round((box[1] + box[3]) * scale),
+        )
 
-    cv2.imshow('image', original_image)
+    cv2.imshow("image", original_image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
     return detections
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

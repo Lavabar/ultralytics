@@ -17,6 +17,7 @@ from .metrics import box_iou
 class Profile(contextlib.ContextDecorator):
     """
     YOLOv8 Profile class.
+
     Usage: as a decorator with @Profile() or as a context manager with 'with Profile():'
     """
 
@@ -31,23 +32,17 @@ class Profile(contextlib.ContextDecorator):
         self.cuda = torch.cuda.is_available()
 
     def __enter__(self):
-        """
-        Start timing.
-        """
+        """Start timing."""
         self.start = self.time()
         return self
 
     def __exit__(self, type, value, traceback):
-        """
-        Stop timing.
-        """
+        """Stop timing."""
         self.dt = self.time() - self.start  # delta-time
         self.t += self.dt  # accumulate dt
 
     def time(self):
-        """
-        Get current time.
-        """
+        """Get current time."""
         if self.cuda:
             torch.cuda.synchronize()
         return time.time()
@@ -60,9 +55,87 @@ def coco80_to_coco91_class():  # converts 80-index (val2014) to 91-index (paper)
     # x1 = [list(a[i] == b).index(True) + 1 for i in range(80)]  # darknet to coco
     # x2 = [list(b[i] == a).index(True) if any(b[i] == a) else None for i in range(91)]  # coco to darknet
     return [
-        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 27, 28, 31, 32, 33, 34,
-        35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
-        64, 65, 67, 70, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 87, 88, 89, 90]
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        27,
+        28,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        67,
+        70,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+    ]
 
 
 def segment2box(segment, width=640, height=640):
@@ -80,7 +153,10 @@ def segment2box(segment, width=640, height=640):
     # Convert 1 segment label to 1 box label, applying inside-image constraint, i.e. (xy1, xy2, ...) to (xyxy)
     x, y = segment.T  # segment xy
     inside = (x >= 0) & (y >= 0) & (x <= width) & (y <= height)
-    x, y, = x[inside], y[inside]
+    (
+        x,
+        y,
+    ) = x[inside], y[inside]
     return np.array([x.min(), y.min(), x.max(), y.max()]) if any(x) else np.zeros(4)  # xyxy
 
 
@@ -130,18 +206,18 @@ def make_divisible(x, divisor):
 
 
 def non_max_suppression(
-        prediction,
-        conf_thres=0.25,
-        iou_thres=0.45,
-        classes=None,
-        agnostic=False,
-        multi_label=False,
-        labels=(),
-        max_det=300,
-        nc=0,  # number of classes (optional)
-        max_time_img=0.05,
-        max_nms=30000,
-        max_wh=7680,
+    prediction,
+    conf_thres=0.25,
+    iou_thres=0.45,
+    classes=None,
+    agnostic=False,
+    multi_label=False,
+    labels=(),
+    max_det=300,
+    nc=0,  # number of classes (optional)
+    max_time_img=0.05,
+    max_nms=30000,
+    max_wh=7680,
 ):
     """
     Perform non-maximum suppression (NMS) on a set of boxes, with support for masks and multiple labels per box.
@@ -174,13 +250,13 @@ def non_max_suppression(
     """
 
     # Checks
-    assert 0 <= conf_thres <= 1, f'Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0'
-    assert 0 <= iou_thres <= 1, f'Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0'
+    assert 0 <= conf_thres <= 1, f"Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0"
+    assert 0 <= iou_thres <= 1, f"Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0"
     if isinstance(prediction, (list, tuple)):  # YOLOv8 model in validation model, output = (inference_out, loss_out)
         prediction = prediction[0]  # select only inference output
 
     device = prediction.device
-    mps = 'mps' in device.type  # Apple MPS
+    mps = "mps" in device.type  # Apple MPS
     if mps:  # MPS not fully supported yet, convert tensors to CPU before NMS
         prediction = prediction.cpu()
     bs = prediction.shape[0]  # batch size
@@ -244,7 +320,7 @@ def non_max_suppression(
         boxes, scores = x[:, :4] + c, x[:, 4]  # boxes (offset by class), scores
         i = torchvision.ops.nms(boxes, scores, iou_thres)  # NMS
         i = i[:max_det]  # limit detections
-        if merge and (1 < n < 3E3):  # Merge NMS (boxes merged using weighted mean)
+        if merge and (1 < n < 3e3):  # Merge NMS (boxes merged using weighted mean)
             # update boxes as boxes(i,4) = weights(i,n) * boxes(n,4)
             iou = box_iou(boxes[i], boxes) > iou_thres  # iou matrix
             weights = iou * scores[None]  # box weights
@@ -256,7 +332,7 @@ def non_max_suppression(
         if mps:
             output[xi] = output[xi].to(device)
         if (time.time() - t) > time_limit:
-            LOGGER.warning(f'WARNING ⚠️ NMS time limit {time_limit:.3f}s exceeded')
+            LOGGER.warning(f"WARNING ⚠️ NMS time limit {time_limit:.3f}s exceeded")
             break  # time limit exceeded
 
     return output
@@ -264,8 +340,7 @@ def non_max_suppression(
 
 def clip_boxes(boxes, shape):
     """
-    It takes a list of bounding boxes and a shape (height, width) and clips the bounding boxes to the
-    shape
+    It takes a list of bounding boxes and a shape (height, width) and clips the bounding boxes to the shape.
 
     Args:
       boxes (torch.Tensor): the bounding boxes to clip
@@ -307,7 +382,7 @@ def clip_coords(boxes, shape):
 
 def scale_image(im1_shape, masks, im0_shape, ratio_pad=None):
     """
-    Takes a mask, and resizes it to the original image size
+    Takes a mask, and resizes it to the original image size.
 
     Args:
       im1_shape (tuple): model input shape, [h, w]
@@ -399,8 +474,8 @@ def xywhn2xyxy(x, w=640, h=640, padw=0, padh=0):
 
 def xyxy2xywhn(x, w=640, h=640, clip=False, eps=0.0):
     """
-    Convert bounding box coordinates from (x1, y1, x2, y2) format to (x, y, width, height, normalized) format.
-    x, y, width and height are normalized to image dimensions
+    Convert bounding box coordinates from (x1, y1, x2, y2) format to (x, y, width, height, normalized) format. x, y,
+    width and height are normalized to image dimensions.
 
     Args:
         x (np.ndarray) or (torch.Tensor): The input bounding box coordinates in (x1, y1, x2, y2) format.
@@ -457,7 +532,7 @@ def xywh2ltwh(x):
 
 def xyxy2ltwh(x):
     """
-    Convert nx4 bounding boxes from [x1, y1, x2, y2] to [x1, y1, w, h], where xy1=top-left, xy2=bottom-right
+    Convert nx4 bounding boxes from [x1, y1, x2, y2] to [x1, y1, w, h], where xy1=top-left, xy2=bottom-right.
 
     Args:
       x (np.ndarray) or (torch.Tensor): The input tensor with the bounding boxes coordinates in the xyxy format
@@ -472,7 +547,7 @@ def xyxy2ltwh(x):
 
 def ltwh2xywh(x):
     """
-    Convert nx4 boxes from [x1, y1, w, h] to [x, y, w, h] where xy1=top-left, xy=center
+    Convert nx4 boxes from [x1, y1, w, h] to [x, y, w, h] where xy1=top-left, xy=center.
 
     Args:
       x (torch.Tensor): the input tensor
@@ -485,7 +560,7 @@ def ltwh2xywh(x):
 
 def ltwh2xyxy(x):
     """
-    It converts the bounding box from [x1, y1, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
+    It converts the bounding box from [x1, y1, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right.
 
     Args:
       x (np.ndarray) or (torch.Tensor): the input image
@@ -537,7 +612,7 @@ def resample_segments(segments, n=1000):
 
 def crop_mask(masks, boxes):
     """
-    It takes a mask and a bounding box, and returns a mask that is cropped to the bounding box
+    It takes a mask and a bounding box, and returns a mask that is cropped to the bounding box.
 
     Args:
       masks (torch.Tensor): [h, w, n] tensor of masks
@@ -570,7 +645,7 @@ def process_mask_upsample(protos, masks_in, bboxes, shape):
     """
     c, mh, mw = protos.shape  # CHW
     masks = (masks_in @ protos.float().view(c, -1)).sigmoid().view(-1, mh, mw)
-    masks = F.interpolate(masks[None], shape, mode='bilinear', align_corners=False)[0]  # CHW
+    masks = F.interpolate(masks[None], shape, mode="bilinear", align_corners=False)[0]  # CHW
     masks = crop_mask(masks, bboxes)  # CHW
     return masks.gt_(0.5)
 
@@ -578,7 +653,7 @@ def process_mask_upsample(protos, masks_in, bboxes, shape):
 def process_mask(protos, masks_in, bboxes, shape, upsample=False):
     """
     It takes the output of the mask head, and applies the mask to the bounding boxes. This is faster but produces
-    downsampled quality of mask
+    downsampled quality of mask.
 
     Args:
       protos (torch.Tensor): [mask_dim, mask_h, mask_w]
@@ -602,7 +677,7 @@ def process_mask(protos, masks_in, bboxes, shape, upsample=False):
 
     masks = crop_mask(masks, downsampled_bboxes)  # CHW
     if upsample:
-        masks = F.interpolate(masks[None], shape, mode='bilinear', align_corners=False)[0]  # CHW
+        masks = F.interpolate(masks[None], shape, mode="bilinear", align_corners=False)[0]  # CHW
     return masks.gt_(0.5)
 
 
@@ -627,14 +702,14 @@ def process_mask_native(protos, masks_in, bboxes, shape):
     bottom, right = int(mh - pad[1]), int(mw - pad[0])
     masks = masks[:, top:bottom, left:right]
 
-    masks = F.interpolate(masks[None], shape, mode='bilinear', align_corners=False)[0]  # CHW
+    masks = F.interpolate(masks[None], shape, mode="bilinear", align_corners=False)[0]  # CHW
     masks = crop_mask(masks, bboxes)  # CHW
     return masks.gt_(0.5)
 
 
 def scale_segments(img1_shape, segments, img0_shape, ratio_pad=None, normalize=False):
     """
-    Rescale segment coordinates (xyxy) from img1_shape to img0_shape
+    Rescale segment coordinates (xyxy) from img1_shape to img0_shape.
 
     Args:
       img1_shape (tuple): The shape of the image that the segments are from.
@@ -663,7 +738,7 @@ def scale_segments(img1_shape, segments, img0_shape, ratio_pad=None, normalize=F
     return segments
 
 
-def masks2segments(masks, strategy='largest'):
+def masks2segments(masks, strategy="largest"):
     """
     It takes a list of masks(n,h,w) and returns a list of segments(n,xy)
 
@@ -675,16 +750,16 @@ def masks2segments(masks, strategy='largest'):
       segments (List): list of segment masks
     """
     segments = []
-    for x in masks.int().cpu().numpy().astype('uint8'):
+    for x in masks.int().cpu().numpy().astype("uint8"):
         c = cv2.findContours(x, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]
         if c:
-            if strategy == 'concat':  # concatenate all segments
+            if strategy == "concat":  # concatenate all segments
                 c = np.concatenate([x.reshape(-1, 2) for x in c])
-            elif strategy == 'largest':  # select largest segment
+            elif strategy == "largest":  # select largest segment
                 c = np.array(c[np.array([len(x) for x in c]).argmax()]).reshape(-1, 2)
         else:
             c = np.zeros((0, 2))  # no segments found
-        segments.append(c.astype('float32'))
+        segments.append(c.astype("float32"))
     return segments
 
 
@@ -715,4 +790,4 @@ def clean_str(s):
     Returns:
       (str): a string with special characters replaced by an underscore _
     """
-    return re.sub(pattern='[|@#!¡·$€%&()=?¿^*;:,¨´><+]', repl='_', string=s)
+    return re.sub(pattern="[|@#!¡·$€%&()=?¿^*;:,¨´><+]", repl="_", string=s)

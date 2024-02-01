@@ -1,7 +1,5 @@
 # Ultralytics YOLO 🚀, GPL-3.0 license
-"""
-Common modules
-"""
+"""Common modules."""
 
 from copy import copy
 from pathlib import Path
@@ -36,8 +34,8 @@ class AutoShape(nn.Module):
     def __init__(self, model, verbose=True):
         super().__init__()
         if verbose:
-            LOGGER.info('Adding AutoShape... ')
-        copy_attr(self, model, include=('yaml', 'nc', 'hyp', 'names', 'stride', 'abc'), exclude=())  # copy attributes
+            LOGGER.info("Adding AutoShape... ")
+        copy_attr(self, model, include=("yaml", "nc", "hyp", "names", "stride", "abc"), exclude=())  # copy attributes
         self.dmb = isinstance(model, AutoBackend)  # DetectMultiBackend() instance
         self.pt = not self.dmb or model.pt  # PyTorch model
         self.model = model.eval()
@@ -73,7 +71,7 @@ class AutoShape(nn.Module):
             if isinstance(size, int):  # expand
                 size = (size, size)
             p = next(self.model.parameters()) if self.pt else torch.empty(1, device=self.model.device)  # param
-            autocast = self.amp and (p.device.type != 'cpu')  # Automatic Mixed Precision (AMP) inference
+            autocast = self.amp and (p.device.type != "cpu")  # Automatic Mixed Precision (AMP) inference
             if isinstance(ims, torch.Tensor):  # torch
                 with amp.autocast(autocast):
                     return self.model(ims.to(p.device).type_as(p), augment=augment)  # inference
@@ -82,13 +80,13 @@ class AutoShape(nn.Module):
             n, ims = (len(ims), list(ims)) if isinstance(ims, (list, tuple)) else (1, [ims])  # number, list of images
             shape0, shape1, files = [], [], []  # image and inference shapes, filenames
             for i, im in enumerate(ims):
-                f = f'image{i}'  # filename
+                f = f"image{i}"  # filename
                 if isinstance(im, (str, Path)):  # filename or uri
-                    im, f = Image.open(requests.get(im, stream=True).raw if str(im).startswith('http') else im), im
+                    im, f = Image.open(requests.get(im, stream=True).raw if str(im).startswith("http") else im), im
                     im = np.asarray(ImageOps.exif_transpose(im))
                 elif isinstance(im, Image.Image):  # PIL Image
-                    im, f = np.asarray(ImageOps.exif_transpose(im)), getattr(im, 'filename', f) or f
-                files.append(Path(f).with_suffix('.jpg').name)
+                    im, f = np.asarray(ImageOps.exif_transpose(im)), getattr(im, "filename", f) or f
+                files.append(Path(f).with_suffix(".jpg").name)
                 if im.shape[0] < 5:  # image in CHW
                     im = im.transpose((1, 2, 0))  # reverse dataloader .transpose(2, 0, 1)
                 im = im[..., :3] if im.ndim == 3 else cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)  # enforce 3ch input
@@ -98,7 +96,7 @@ class AutoShape(nn.Module):
                 shape1.append([y * g for y in s])
                 ims[i] = im if im.data.contiguous else np.ascontiguousarray(im)  # update
             shape1 = [make_divisible(x, self.stride) for x in np.array(shape1).max(0)] if self.pt else size  # inf shape
-            x = [LetterBox(shape1, auto=False)(image=im)['img'] for im in ims]  # pad
+            x = [LetterBox(shape1, auto=False)(image=im)["img"] for im in ims]  # pad
             x = np.ascontiguousarray(np.array(x).transpose((0, 3, 1, 2)))  # stack and BHWC to BCHW
             x = torch.from_numpy(x).to(p.device).type_as(p) / 255  # uint8 to fp16/32
 
@@ -109,13 +107,15 @@ class AutoShape(nn.Module):
 
             # Postprocess
             with dt[2]:
-                y = non_max_suppression(y if self.dmb else y[0],
-                                        self.conf,
-                                        self.iou,
-                                        self.classes,
-                                        self.agnostic,
-                                        self.multi_label,
-                                        max_det=self.max_det)  # NMS
+                y = non_max_suppression(
+                    y if self.dmb else y[0],
+                    self.conf,
+                    self.iou,
+                    self.classes,
+                    self.agnostic,
+                    self.multi_label,
+                    max_det=self.max_det,
+                )  # NMS
                 for i in range(n):
                     scale_boxes(shape1, y[i][:, :4], shape0[i])
 
@@ -138,35 +138,38 @@ class Detections:
         self.xyxyn = [x / g for x, g in zip(self.xyxy, gn)]  # xyxy normalized
         self.xywhn = [x / g for x, g in zip(self.xywh, gn)]  # xywh normalized
         self.n = len(self.pred)  # number of images (batch size)
-        self.t = tuple(x.t / self.n * 1E3 for x in times)  # timestamps (ms)
+        self.t = tuple(x.t / self.n * 1e3 for x in times)  # timestamps (ms)
         self.s = tuple(shape)  # inference BCHW shape
 
-    def _run(self, pprint=False, show=False, save=False, crop=False, render=False, labels=True, save_dir=Path('')):
-        s, crops = '', []
+    def _run(self, pprint=False, show=False, save=False, crop=False, render=False, labels=True, save_dir=Path("")):
+        s, crops = "", []
         for i, (im, pred) in enumerate(zip(self.ims, self.pred)):
-            s += f'\nimage {i + 1}/{len(self.pred)}: {im.shape[0]}x{im.shape[1]} '  # string
+            s += f"\nimage {i + 1}/{len(self.pred)}: {im.shape[0]}x{im.shape[1]} "  # string
             if pred.shape[0]:
                 for c in pred[:, -1].unique():
                     n = (pred[:, -1] == c).sum()  # detections per class
                     s += f"{n} {self.names[int(c)]}{'s' * (n > 1)}, "  # add to string
-                s = s.rstrip(', ')
+                s = s.rstrip(", ")
                 if show or save or render or crop:
                     annotator = Annotator(im, example=str(self.names))
                     for *box, conf, cls in reversed(pred):  # xyxy, confidence, class
-                        label = f'{self.names[int(cls)]} {conf:.2f}'
+                        label = f"{self.names[int(cls)]} {conf:.2f}"
                         if crop:
-                            file = save_dir / 'crops' / self.names[int(cls)] / self.files[i] if save else None
-                            crops.append({
-                                'box': box,
-                                'conf': conf,
-                                'cls': cls,
-                                'label': label,
-                                'im': save_one_box(box, im, file=file, save=save)})
+                            file = save_dir / "crops" / self.names[int(cls)] / self.files[i] if save else None
+                            crops.append(
+                                {
+                                    "box": box,
+                                    "conf": conf,
+                                    "cls": cls,
+                                    "label": label,
+                                    "im": save_one_box(box, im, file=file, save=save),
+                                }
+                            )
                         else:  # all others
-                            annotator.box_label(box, label if labels else '', color=colors(cls))
+                            annotator.box_label(box, label if labels else "", color=colors(cls))
                     im = annotator.im
             else:
-                s += '(no detections)'
+                s += "(no detections)"
 
             im = Image.fromarray(im.astype(np.uint8)) if isinstance(im, np.ndarray) else im  # from np
             if show:
@@ -179,21 +182,21 @@ class Detections:
             if render:
                 self.ims[i] = np.asarray(im)
         if pprint:
-            s = s.lstrip('\n')
-            return f'{s}\nSpeed: %.1fms preprocess, %.1fms inference, %.1fms NMS per image at shape {self.s}' % self.t
+            s = s.lstrip("\n")
+            return f"{s}\nSpeed: %.1fms preprocess, %.1fms inference, %.1fms NMS per image at shape {self.s}" % self.t
         if crop:
             if save:
-                LOGGER.info(f'Saved results to {save_dir}\n')
+                LOGGER.info(f"Saved results to {save_dir}\n")
             return crops
 
     def show(self, labels=True):
         self._run(show=True, labels=labels)  # show results
 
-    def save(self, labels=True, save_dir='runs/detect/exp', exist_ok=False):
+    def save(self, labels=True, save_dir="runs/detect/exp", exist_ok=False):
         save_dir = increment_path(save_dir, exist_ok, mkdir=True)  # increment save_dir
         self._run(save=True, labels=labels, save_dir=save_dir)  # save results
 
-    def crop(self, save=True, save_dir='runs/detect/exp', exist_ok=False):
+    def crop(self, save=True, save_dir="runs/detect/exp", exist_ok=False):
         save_dir = increment_path(save_dir, exist_ok, mkdir=True) if save else None
         return self._run(crop=True, save=save, save_dir=save_dir)  # crop results
 
@@ -204,10 +207,11 @@ class Detections:
     def pandas(self):
         # return detections as pandas DataFrames, i.e. print(results.pandas().xyxy[0])
         import pandas
+
         new = copy(self)  # return copy
-        ca = 'xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class', 'name'  # xyxy columns
-        cb = 'xcenter', 'ycenter', 'width', 'height', 'confidence', 'class', 'name'  # xywh columns
-        for k, c in zip(['xyxy', 'xyxyn', 'xywh', 'xywhn'], [ca, ca, cb, cb]):
+        ca = "xmin", "ymin", "xmax", "ymax", "confidence", "class", "name"  # xyxy columns
+        cb = "xcenter", "ycenter", "width", "height", "confidence", "class", "name"  # xywh columns
+        for k, c in zip(["xyxy", "xyxyn", "xywh", "xywhn"], [ca, ca, cb, cb]):
             a = [[x[:5] + [int(x[5]), self.names[int(x[5])]] for x in x.tolist()] for x in getattr(self, k)]  # update
             setattr(new, k, [pandas.DataFrame(x, columns=c) for x in a])
         return new
@@ -231,4 +235,4 @@ class Detections:
         return self._run(pprint=True)  # print results
 
     def __repr__(self):
-        return f'YOLOv8 {self.__class__} instance\n' + self.__str__()
+        return f"YOLOv8 {self.__class__} instance\n" + self.__str__()

@@ -14,7 +14,7 @@ predictor's call method.
     
     for result in results:
         boxes = result.boxes  # Boxes object for bbox outputs
-        masks = result.masks  # Masks object for segmenation masks outputs
+        masks = result.masks  # Masks object for segmentation masks outputs
         probs = result.probs  # Class probabilities for classification outputs
     ```
     
@@ -26,7 +26,7 @@ predictor's call method.
     
     for r in results:
         boxes = r.boxes  # Boxes object for bbox outputs
-        masks = r.masks  # Masks object for segmenation masks outputs
+        masks = r.masks  # Masks object for segmentation masks outputs
         probs = r.probs  # Class probabilities for classification outputs
     ```
 

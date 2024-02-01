@@ -1,7 +1,5 @@
 # Ultralytics YOLO 🚀, GPL-3.0 license
-"""
-Model validation metrics
-"""
+"""Model validation metrics."""
 import math
 import warnings
 from pathlib import Path
@@ -21,7 +19,10 @@ def box_area(box):
 
 
 def bbox_ioa(box1, box2, eps=1e-7):
-    """Returns the intersection over box2 area given box1, box2. Boxes are x1y1x2y2
+    """
+    Returns the intersection over box2 area given box1, box2.
+
+    Boxes are x1y1x2y2
     box1:       np.array of shape(nx4)
     box2:       np.array of shape(mx4)
     returns:    np.array of shape(nxm)
@@ -32,8 +33,9 @@ def bbox_ioa(box1, box2, eps=1e-7):
     b2_x1, b2_y1, b2_x2, b2_y2 = box2.T
 
     # Intersection area
-    inter_area = (np.minimum(b1_x2[:, None], b2_x2) - np.maximum(b1_x1[:, None], b2_x1)).clip(0) * \
-                 (np.minimum(b1_y2[:, None], b2_y2) - np.maximum(b1_y1[:, None], b2_y1)).clip(0)
+    inter_area = (np.minimum(b1_x2[:, None], b2_x2) - np.maximum(b1_x1[:, None], b2_x1)).clip(0) * (
+        np.minimum(b1_y2[:, None], b2_y2) - np.maximum(b1_y1[:, None], b2_y1)
+    ).clip(0)
 
     # box2 area
     box2_area = (b2_x2 - b2_x1) * (b2_y2 - b2_y1) + eps
@@ -81,8 +83,9 @@ def bbox_iou(box1, box2, xywh=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7
         w2, h2 = b2_x2 - b2_x1, b2_y2 - b2_y1 + eps
 
     # Intersection area
-    inter = (b1_x2.minimum(b2_x2) - b1_x1.maximum(b2_x1)).clamp(0) * \
-            (b1_y2.minimum(b2_y2) - b1_y1.maximum(b2_y1)).clamp(0)
+    inter = (b1_x2.minimum(b2_x2) - b1_x1.maximum(b2_x1)).clamp(0) * (
+        b1_y2.minimum(b2_y2) - b1_y1.maximum(b2_y1)
+    ).clamp(0)
 
     # Union Area
     union = w1 * h1 + w2 * h2 - inter + eps
@@ -93,10 +96,10 @@ def bbox_iou(box1, box2, xywh=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7
         cw = b1_x2.maximum(b2_x2) - b1_x1.minimum(b2_x1)  # convex (smallest enclosing box) width
         ch = b1_y2.maximum(b2_y2) - b1_y1.minimum(b2_y1)  # convex height
         if CIoU or DIoU:  # Distance or Complete IoU https://arxiv.org/abs/1911.08287v1
-            c2 = cw ** 2 + ch ** 2 + eps  # convex diagonal squared
+            c2 = cw**2 + ch**2 + eps  # convex diagonal squared
             rho2 = ((b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2 + (b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2) / 4  # center dist ** 2
             if CIoU:  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
-                v = (4 / math.pi ** 2) * (torch.atan(w2 / h2) - torch.atan(w1 / h1)).pow(2)
+                v = (4 / math.pi**2) * (torch.atan(w2 / h2) - torch.atan(w1 / h1)).pow(2)
                 with torch.no_grad():
                     alpha = v / (v - iou + (1 + eps))
                 return iou - (rho2 / c2 + v * alpha)  # CIoU
@@ -144,7 +147,7 @@ class FocalLoss(nn.Module):
         self.gamma = gamma
         self.alpha = alpha
         self.reduction = loss_fcn.reduction
-        self.loss_fcn.reduction = 'none'  # required to apply FL to each element
+        self.loss_fcn.reduction = "none"  # required to apply FL to each element
 
     def forward(self, pred, true):
         loss = self.loss_fcn(pred, true)
@@ -158,9 +161,9 @@ class FocalLoss(nn.Module):
         modulating_factor = (1.0 - p_t) ** self.gamma
         loss *= alpha_factor * modulating_factor
 
-        if self.reduction == 'mean':
+        if self.reduction == "mean":
             return loss.mean()
-        elif self.reduction == 'sum':
+        elif self.reduction == "sum":
             return loss.sum()
         else:  # 'none'
             return loss
@@ -177,6 +180,7 @@ class ConfusionMatrix:
     def process_batch(self, detections, labels):
         """
         Return intersection-over-union (Jaccard index) of boxes.
+
         Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
         Arguments:
             detections (Array[N, 6]), x1, y1, x2, y2, conf, class
@@ -229,40 +233,41 @@ class ConfusionMatrix:
         # fn = self.matrix.sum(0) - tp  # false negatives (missed detections)
         return tp[:-1], fp[:-1]  # remove background class
 
-    @TryExcept('WARNING ⚠️ ConfusionMatrix plot failure')
-    def plot(self, normalize=True, save_dir='', names=()):
+    @TryExcept("WARNING ⚠️ ConfusionMatrix plot failure")
+    def plot(self, normalize=True, save_dir="", names=()):
         import seaborn as sn
 
-        array = self.matrix / ((self.matrix.sum(0).reshape(1, -1) + 1E-9) if normalize else 1)  # normalize columns
+        array = self.matrix / ((self.matrix.sum(0).reshape(1, -1) + 1e-9) if normalize else 1)  # normalize columns
         array[array < 0.005] = np.nan  # don't annotate (would appear as 0.00)
 
         fig, ax = plt.subplots(1, 1, figsize=(12, 9), tight_layout=True)
         nc, nn = self.nc, len(names)  # number of classes, names
         sn.set(font_scale=1.0 if nc < 50 else 0.8)  # for label size
         labels = (0 < nn < 99) and (nn == nc)  # apply names to ticklabels
-        ticklabels = (names + ['background']) if labels else 'auto'
+        ticklabels = (names + ["background"]) if labels else "auto"
         with warnings.catch_warnings():
-            warnings.simplefilter('ignore')  # suppress empty matrix RuntimeWarning: All-NaN slice encountered
-            sn.heatmap(array,
-                       ax=ax,
-                       annot=nc < 30,
-                       annot_kws={
-                           'size': 8},
-                       cmap='Blues',
-                       fmt='.2f',
-                       square=True,
-                       vmin=0.0,
-                       xticklabels=ticklabels,
-                       yticklabels=ticklabels).set_facecolor((1, 1, 1))
-        ax.set_xlabel('True')
-        ax.set_ylabel('Predicted')
-        ax.set_title('Confusion Matrix')
-        fig.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
+            warnings.simplefilter("ignore")  # suppress empty matrix RuntimeWarning: All-NaN slice encountered
+            sn.heatmap(
+                array,
+                ax=ax,
+                annot=nc < 30,
+                annot_kws={"size": 8},
+                cmap="Blues",
+                fmt=".2f",
+                square=True,
+                vmin=0.0,
+                xticklabels=ticklabels,
+                yticklabels=ticklabels,
+            ).set_facecolor((1, 1, 1))
+        ax.set_xlabel("True")
+        ax.set_ylabel("Predicted")
+        ax.set_title("Confusion Matrix")
+        fig.savefig(Path(save_dir) / "confusion_matrix.png", dpi=250)
         plt.close(fig)
 
     def print(self):
         for i in range(self.nc + 1):
-            LOGGER.info(' '.join(map(str, self.matrix[i])))
+            LOGGER.info(" ".join(map(str, self.matrix[i])))
 
 
 def smooth(y, f=0.05):
@@ -270,55 +275,55 @@ def smooth(y, f=0.05):
     nf = round(len(y) * f * 2) // 2 + 1  # number of filter elements (must be odd)
     p = np.ones(nf // 2)  # ones padding
     yp = np.concatenate((p * y[0], y, p * y[-1]), 0)  # y padded
-    return np.convolve(yp, np.ones(nf) / nf, mode='valid')  # y-smoothed
+    return np.convolve(yp, np.ones(nf) / nf, mode="valid")  # y-smoothed
 
 
-def plot_pr_curve(px, py, ap, save_dir=Path('pr_curve.png'), names=()):
+def plot_pr_curve(px, py, ap, save_dir=Path("pr_curve.png"), names=()):
     # Precision-recall curve
     fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
     py = np.stack(py, axis=1)
 
     if 0 < len(names) < 21:  # display per-class legend if < 21 classes
         for i, y in enumerate(py.T):
-            ax.plot(px, y, linewidth=1, label=f'{names[i]} {ap[i, 0]:.3f}')  # plot(recall, precision)
+            ax.plot(px, y, linewidth=1, label=f"{names[i]} {ap[i, 0]:.3f}")  # plot(recall, precision)
     else:
-        ax.plot(px, py, linewidth=1, color='grey')  # plot(recall, precision)
+        ax.plot(px, py, linewidth=1, color="grey")  # plot(recall, precision)
 
-    ax.plot(px, py.mean(1), linewidth=3, color='blue', label='all classes %.3f mAP@0.5' % ap[:, 0].mean())
-    ax.set_xlabel('Recall')
-    ax.set_ylabel('Precision')
+    ax.plot(px, py.mean(1), linewidth=3, color="blue", label="all classes %.3f mAP@0.5" % ap[:, 0].mean())
+    ax.set_xlabel("Recall")
+    ax.set_ylabel("Precision")
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
-    ax.legend(bbox_to_anchor=(1.04, 1), loc='upper left')
-    ax.set_title('Precision-Recall Curve')
+    ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+    ax.set_title("Precision-Recall Curve")
     fig.savefig(save_dir, dpi=250)
     plt.close(fig)
 
 
-def plot_mc_curve(px, py, save_dir=Path('mc_curve.png'), names=(), xlabel='Confidence', ylabel='Metric'):
+def plot_mc_curve(px, py, save_dir=Path("mc_curve.png"), names=(), xlabel="Confidence", ylabel="Metric"):
     # Metric-confidence curve
     fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True)
 
     if 0 < len(names) < 21:  # display per-class legend if < 21 classes
         for i, y in enumerate(py):
-            ax.plot(px, y, linewidth=1, label=f'{names[i]}')  # plot(confidence, metric)
+            ax.plot(px, y, linewidth=1, label=f"{names[i]}")  # plot(confidence, metric)
     else:
-        ax.plot(px, py.T, linewidth=1, color='grey')  # plot(confidence, metric)
+        ax.plot(px, py.T, linewidth=1, color="grey")  # plot(confidence, metric)
 
     y = smooth(py.mean(0), 0.05)
-    ax.plot(px, y, linewidth=3, color='blue', label=f'all classes {y.max():.2f} at {px[y.argmax()]:.3f}')
+    ax.plot(px, y, linewidth=3, color="blue", label=f"all classes {y.max():.2f} at {px[y.argmax()]:.3f}")
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
-    ax.legend(bbox_to_anchor=(1.04, 1), loc='upper left')
-    ax.set_title(f'{ylabel}-Confidence Curve')
+    ax.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+    ax.set_title(f"{ylabel}-Confidence Curve")
     fig.savefig(save_dir, dpi=250)
     plt.close(fig)
 
 
 def compute_ap(recall, precision):
-    """ Compute the average precision, given the recall and precision curves
+    """Compute the average precision, given the recall and precision curves
     Arguments:
         recall:    The recall curve (list)
         precision: The precision curve (list)
@@ -334,8 +339,8 @@ def compute_ap(recall, precision):
     mpre = np.flip(np.maximum.accumulate(np.flip(mpre)))
 
     # Integrate area under curve
-    method = 'interp'  # methods: 'continuous', 'interp'
-    if method == 'interp':
+    method = "interp"  # methods: 'continuous', 'interp'
+    if method == "interp":
         x = np.linspace(0, 1, 101)  # 101-point interp (COCO)
         ap = np.trapz(np.interp(x, mrec, mpre), x)  # integrate
     else:  # 'continuous'
@@ -345,7 +350,7 @@ def compute_ap(recall, precision):
     return ap, mpre, mrec
 
 
-def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir=Path(), names=(), eps=1e-16, prefix=''):
+def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir=Path(), names=(), eps=1e-16, prefix=""):
     """
     Computes the average precision per class for object detection evaluation.
 
@@ -369,7 +374,6 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir=Path(), na
             f1 (np.ndarray): F1-score values at each confidence threshold.
             ap (np.ndarray): Average precision for each class at different IoU thresholds.
             unique_classes (np.ndarray): An array of unique classes that have data.
-
     """
 
     # Sort by objectness
@@ -413,10 +417,10 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir=Path(), na
     names = [v for k, v in names.items() if k in unique_classes]  # list: only classes that have data
     names = dict(enumerate(names))  # to dict
     if plot:
-        plot_pr_curve(px, py, ap, save_dir / f'{prefix}PR_curve.png', names)
-        plot_mc_curve(px, f1, save_dir / f'{prefix}F1_curve.png', names, ylabel='F1')
-        plot_mc_curve(px, p, save_dir / f'{prefix}P_curve.png', names, ylabel='Precision')
-        plot_mc_curve(px, r, save_dir / f'{prefix}R_curve.png', names, ylabel='Recall')
+        plot_pr_curve(px, py, ap, save_dir / f"{prefix}PR_curve.png", names)
+        plot_mc_curve(px, f1, save_dir / f"{prefix}F1_curve.png", names, ylabel="F1")
+        plot_mc_curve(px, p, save_dir / f"{prefix}P_curve.png", names, ylabel="Precision")
+        plot_mc_curve(px, r, save_dir / f"{prefix}R_curve.png", names, ylabel="Recall")
 
     i = smooth(f1.mean(0), 0.1).argmax()  # max F1 index
     p, r, f1 = p[:, i], r[:, i], f1[:, i]
@@ -427,31 +431,30 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, save_dir=Path(), na
 
 class Metric:
     """
-        Class for computing evaluation metrics for YOLOv8 model.
+    Class for computing evaluation metrics for YOLOv8 model.
 
-        Attributes:
-            p (list): Precision for each class. Shape: (nc,).
-            r (list): Recall for each class. Shape: (nc,).
-            f1 (list): F1 score for each class. Shape: (nc,).
-            all_ap (list): AP scores for all classes and all IoU thresholds. Shape: (nc, 10).
-            ap_class_index (list): Index of class for each AP score. Shape: (nc,).
-            nc (int): Number of classes.
+    Attributes:
+        p (list): Precision for each class. Shape: (nc,).
+        r (list): Recall for each class. Shape: (nc,).
+        f1 (list): F1 score for each class. Shape: (nc,).
+        all_ap (list): AP scores for all classes and all IoU thresholds. Shape: (nc, 10).
+        ap_class_index (list): Index of class for each AP score. Shape: (nc,).
+        nc (int): Number of classes.
 
-        Methods:
-            ap50(): AP at IoU threshold of 0.5 for all classes. Returns: List of AP scores. Shape: (nc,) or [].
-            ap(): AP at IoU thresholds from 0.5 to 0.95 for all classes. Returns: List of AP scores. Shape: (nc,) or [].
-            mp(): Mean precision of all classes. Returns: Float.
-            mr(): Mean recall of all classes. Returns: Float.
-            map50(): Mean AP at IoU threshold of 0.5 for all classes. Returns: Float.
-            map75(): Mean AP at IoU threshold of 0.75 for all classes. Returns: Float.
-            map(): Mean AP at IoU thresholds from 0.5 to 0.95 for all classes. Returns: Float.
-            mean_results(): Mean of results, returns mp, mr, map50, map.
-            class_result(i): Class-aware result, returns p[i], r[i], ap50[i], ap[i].
-            maps(): mAP of each class. Returns: Array of mAP scores, shape: (nc,).
-            fitness(): Model fitness as a weighted combination of metrics. Returns: Float.
-            update(results): Update metric attributes with new evaluation results.
-
-        """
+    Methods:
+        ap50(): AP at IoU threshold of 0.5 for all classes. Returns: List of AP scores. Shape: (nc,) or [].
+        ap(): AP at IoU thresholds from 0.5 to 0.95 for all classes. Returns: List of AP scores. Shape: (nc,) or [].
+        mp(): Mean precision of all classes. Returns: Float.
+        mr(): Mean recall of all classes. Returns: Float.
+        map50(): Mean AP at IoU threshold of 0.5 for all classes. Returns: Float.
+        map75(): Mean AP at IoU threshold of 0.75 for all classes. Returns: Float.
+        map(): Mean AP at IoU thresholds from 0.5 to 0.95 for all classes. Returns: Float.
+        mean_results(): Mean of results, returns mp, mr, map50, map.
+        class_result(i): Class-aware result, returns p[i], r[i], ap50[i], ap[i].
+        maps(): mAP of each class. Returns: Array of mAP scores, shape: (nc,).
+        fitness(): Model fitness as a weighted combination of metrics. Returns: Float.
+        update(results): Update metric attributes with new evaluation results.
+    """
 
     def __init__(self) -> None:
         self.p = []  # (nc, )
@@ -467,7 +470,9 @@ class Metric:
 
     @property
     def ap50(self):
-        """AP@0.5 of all classes.
+        """
+        AP@0.5 of all classes.
+
         Returns:
             (nc, ) or [].
         """
@@ -483,7 +488,9 @@ class Metric:
 
     @property
     def mp(self):
-        """mean precision of all classes.
+        """
+        Mean precision of all classes.
+
         Returns:
             float.
         """
@@ -491,7 +498,9 @@ class Metric:
 
     @property
     def mr(self):
-        """mean recall of all classes.
+        """
+        Mean recall of all classes.
+
         Returns:
             float.
         """
@@ -499,7 +508,9 @@ class Metric:
 
     @property
     def map50(self):
-        """Mean AP@0.5 of all classes.
+        """
+        Mean AP@0.5 of all classes.
+
         Returns:
             float.
         """
@@ -507,7 +518,9 @@ class Metric:
 
     @property
     def map75(self):
-        """Mean AP@0.75 of all classes.
+        """
+        Mean AP@0.75 of all classes.
+
         Returns:
             float.
         """
@@ -515,23 +528,25 @@ class Metric:
 
     @property
     def map(self):
-        """Mean AP@0.5:0.95 of all classes.
+        """
+        Mean AP@0.5:0.95 of all classes.
+
         Returns:
             float.
         """
         return self.all_ap.mean() if len(self.all_ap) else 0.0
 
     def mean_results(self):
-        """Mean of results, return mp, mr, map50, map"""
+        """Mean of results, return mp, mr, map50, map."""
         return [self.mp, self.mr, self.map50, self.map]
 
     def class_result(self, i):
-        """class-aware result, return p[i], r[i], ap50[i], ap[i]"""
+        """Class-aware result, return p[i], r[i], ap50[i], ap[i]"""
         return self.p[i], self.r[i], self.ap50[i], self.ap[i]
 
     @property
     def maps(self):
-        """mAP of each class"""
+        """MAP of each class."""
         maps = np.zeros(self.nc) + self.map
         for i, c in enumerate(self.ap_class_index):
             maps[c] = self.ap[i]
@@ -578,26 +593,27 @@ class DetMetrics:
         results_dict: Returns a dictionary that maps detection metric keys to their computed values.
     """
 
-    def __init__(self, save_dir=Path('.'), plot=False, names=()) -> None:
+    def __init__(self, save_dir=Path("."), plot=False, names=()) -> None:
         self.save_dir = save_dir
         self.plot = plot
         self.names = names
         self.box = Metric()
-        self.speed = {'preprocess': 0.0, 'inference': 0.0, 'loss': 0.0, 'postprocess': 0.0}
+        self.speed = {"preprocess": 0.0, "inference": 0.0, "loss": 0.0, "postprocess": 0.0}
 
     def __getattr__(self, attr):
         name = self.__class__.__name__
         raise AttributeError(f"'{name}' object has no attribute '{attr}'. See valid attributes below.\n{self.__doc__}")
 
     def process(self, tp, conf, pred_cls, target_cls):
-        results = ap_per_class(tp, conf, pred_cls, target_cls, plot=self.plot, save_dir=self.save_dir,
-                               names=self.names)[2:]
+        results = ap_per_class(
+            tp, conf, pred_cls, target_cls, plot=self.plot, save_dir=self.save_dir, names=self.names
+        )[2:]
         self.box.nc = len(self.names)
         self.box.update(results)
 
     @property
     def keys(self):
-        return ['metrics/precision(B)', 'metrics/recall(B)', 'metrics/mAP50(B)', 'metrics/mAP50-95(B)']
+        return ["metrics/precision(B)", "metrics/recall(B)", "metrics/mAP50(B)", "metrics/mAP50-95(B)"]
 
     def mean_results(self):
         return self.box.mean_results()
@@ -619,7 +635,7 @@ class DetMetrics:
 
     @property
     def results_dict(self):
-        return dict(zip(self.keys + ['fitness'], self.mean_results() + [self.fitness]))
+        return dict(zip(self.keys + ["fitness"], self.mean_results() + [self.fitness]))
 
 
 class SegmentMetrics:
@@ -649,13 +665,13 @@ class SegmentMetrics:
         results_dict: Returns the dictionary containing all the detection and segmentation metrics and fitness score.
     """
 
-    def __init__(self, save_dir=Path('.'), plot=False, names=()) -> None:
+    def __init__(self, save_dir=Path("."), plot=False, names=()) -> None:
         self.save_dir = save_dir
         self.plot = plot
         self.names = names
         self.box = Metric()
         self.seg = Metric()
-        self.speed = {'preprocess': 0.0, 'inference': 0.0, 'loss': 0.0, 'postprocess': 0.0}
+        self.speed = {"preprocess": 0.0, "inference": 0.0, "loss": 0.0, "postprocess": 0.0}
 
     def __getattr__(self, attr):
         name = self.__class__.__name__
@@ -673,32 +689,29 @@ class SegmentMetrics:
             target_cls (list): List of target classes.
         """
 
-        results_mask = ap_per_class(tp_m,
-                                    conf,
-                                    pred_cls,
-                                    target_cls,
-                                    plot=self.plot,
-                                    save_dir=self.save_dir,
-                                    names=self.names,
-                                    prefix='Mask')[2:]
+        results_mask = ap_per_class(
+            tp_m, conf, pred_cls, target_cls, plot=self.plot, save_dir=self.save_dir, names=self.names, prefix="Mask"
+        )[2:]
         self.seg.nc = len(self.names)
         self.seg.update(results_mask)
-        results_box = ap_per_class(tp_b,
-                                   conf,
-                                   pred_cls,
-                                   target_cls,
-                                   plot=self.plot,
-                                   save_dir=self.save_dir,
-                                   names=self.names,
-                                   prefix='Box')[2:]
+        results_box = ap_per_class(
+            tp_b, conf, pred_cls, target_cls, plot=self.plot, save_dir=self.save_dir, names=self.names, prefix="Box"
+        )[2:]
         self.box.nc = len(self.names)
         self.box.update(results_box)
 
     @property
     def keys(self):
         return [
-            'metrics/precision(B)', 'metrics/recall(B)', 'metrics/mAP50(B)', 'metrics/mAP50-95(B)',
-            'metrics/precision(M)', 'metrics/recall(M)', 'metrics/mAP50(M)', 'metrics/mAP50-95(M)']
+            "metrics/precision(B)",
+            "metrics/recall(B)",
+            "metrics/mAP50(B)",
+            "metrics/mAP50-95(B)",
+            "metrics/precision(M)",
+            "metrics/recall(M)",
+            "metrics/mAP50(M)",
+            "metrics/mAP50-95(M)",
+        ]
 
     def mean_results(self):
         return self.box.mean_results() + self.seg.mean_results()
@@ -721,7 +734,7 @@ class SegmentMetrics:
 
     @property
     def results_dict(self):
-        return dict(zip(self.keys + ['fitness'], self.mean_results() + [self.fitness]))
+        return dict(zip(self.keys + ["fitness"], self.mean_results() + [self.fitness]))
 
 
 class ClassifyMetrics:
@@ -745,7 +758,7 @@ class ClassifyMetrics:
     def __init__(self) -> None:
         self.top1 = 0
         self.top5 = 0
-        self.speed = {'preprocess': 0.0, 'inference': 0.0, 'loss': 0.0, 'postprocess': 0.0}
+        self.speed = {"preprocess": 0.0, "inference": 0.0, "loss": 0.0, "postprocess": 0.0}
 
     def __getattr__(self, attr):
         name = self.__class__.__name__
@@ -764,8 +777,8 @@ class ClassifyMetrics:
 
     @property
     def results_dict(self):
-        return dict(zip(self.keys + ['fitness'], [self.top1, self.top5, self.fitness]))
+        return dict(zip(self.keys + ["fitness"], [self.top1, self.top5, self.fitness]))
 
     @property
     def keys(self):
-        return ['metrics/accuracy_top1', 'metrics/accuracy_top5']
+        return ["metrics/accuracy_top1", "metrics/accuracy_top5"]

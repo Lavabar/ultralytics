@@ -11,7 +11,6 @@ class STrack(BaseTrack):
     shared_kalman = KalmanFilterXYAH()
 
     def __init__(self, tlwh, score, cls):
-
         # wait activate
         self._tlwh = np.asarray(self.tlbr_to_tlwh(tlwh[:-1]), dtype=np.float32)
         self.kalman_filter = None
@@ -62,7 +61,7 @@ class STrack(BaseTrack):
                 stracks[i].covariance = cov
 
     def activate(self, kalman_filter, frame_id):
-        """Start a new tracklet"""
+        """Start a new tracklet."""
         self.kalman_filter = kalman_filter
         self.track_id = self.next_id()
         self.mean, self.covariance = self.kalman_filter.initiate(self.convert_coords(self._tlwh))
@@ -75,8 +74,9 @@ class STrack(BaseTrack):
         self.start_frame = frame_id
 
     def re_activate(self, new_track, frame_id, new_id=False):
-        self.mean, self.covariance = self.kalman_filter.update(self.mean, self.covariance,
-                                                               self.convert_coords(new_track.tlwh))
+        self.mean, self.covariance = self.kalman_filter.update(
+            self.mean, self.covariance, self.convert_coords(new_track.tlwh)
+        )
         self.tracklet_len = 0
         self.state = TrackState.Tracked
         self.is_activated = True
@@ -88,18 +88,14 @@ class STrack(BaseTrack):
         self.idx = new_track.idx
 
     def update(self, new_track, frame_id):
-        """
-        Update a matched track
-        :type new_track: STrack
-        :type frame_id: int
-        :return:
-        """
+        """Update a matched track :type new_track: STrack :type frame_id: int :return:"""
         self.frame_id = frame_id
         self.tracklet_len += 1
 
         new_tlwh = new_track.tlwh
-        self.mean, self.covariance = self.kalman_filter.update(self.mean, self.covariance,
-                                                               self.convert_coords(new_tlwh))
+        self.mean, self.covariance = self.kalman_filter.update(
+            self.mean, self.covariance, self.convert_coords(new_tlwh)
+        )
         self.state = TrackState.Tracked
         self.is_activated = True
 
@@ -112,9 +108,7 @@ class STrack(BaseTrack):
 
     @property
     def tlwh(self):
-        """Get current position in bounding box format `(top left x, top left y,
-        width, height)`.
-        """
+        """Get current position in bounding box format `(top left x, top left y, width, height)`."""
         if self.mean is None:
             return self._tlwh.copy()
         ret = self.mean[:4].copy()
@@ -124,17 +118,15 @@ class STrack(BaseTrack):
 
     @property
     def tlbr(self):
-        """Convert bounding box to format `(min x, min y, max x, max y)`, i.e.,
-        `(top left, bottom right)`.
-        """
+        """Convert bounding box to format `(min x, min y, max x, max y)`, i.e., `(top left, bottom right)`."""
         ret = self.tlwh.copy()
         ret[2:] += ret[:2]
         return ret
 
     @staticmethod
     def tlwh_to_xyah(tlwh):
-        """Convert bounding box to format `(center x, center y, aspect ratio,
-        height)`, where the aspect ratio is `width / height`.
+        """Convert bounding box to format `(center x, center y, aspect ratio, height)`, where the aspect ratio is `width
+        / height`.
         """
         ret = np.asarray(tlwh).copy()
         ret[:2] += ret[2:] / 2
@@ -154,11 +146,10 @@ class STrack(BaseTrack):
         return ret
 
     def __repr__(self):
-        return f'OT_{self.track_id}_({self.start_frame}-{self.end_frame})'
+        return f"OT_{self.track_id}_({self.start_frame}-{self.end_frame})"
 
 
 class BYTETracker:
-
     def __init__(self, args, frame_rate=30):
         self.tracked_stracks = []  # type: list[STrack]
         self.lost_stracks = []  # type: list[STrack]
@@ -195,7 +186,7 @@ class BYTETracker:
         cls_second = cls[inds_second]
 
         detections = self.init_track(dets, scores_keep, cls_keep, img)
-        """ Add newly detected tracklets to tracked_stracks"""
+        """Add newly detected tracklets to tracked_stracks."""
         unconfirmed = []
         tracked_stracks = []  # type: list[STrack]
         for track in self.tracked_stracks:
@@ -207,7 +198,7 @@ class BYTETracker:
         strack_pool = self.joint_stracks(tracked_stracks, self.lost_stracks)
         # Predict the current location with KF
         self.multi_predict(strack_pool)
-        if hasattr(self, 'gmc'):
+        if hasattr(self, "gmc"):
             warp = self.gmc.apply(img, dets)
             STrack.multi_gmc(strack_pool, warp)
             STrack.multi_gmc(unconfirmed, warp)
@@ -279,8 +270,10 @@ class BYTETracker:
         self.removed_stracks.extend(removed_stracks)
         self.tracked_stracks, self.lost_stracks = self.remove_duplicate_stracks(self.tracked_stracks, self.lost_stracks)
         output = [
-            track.tlbr.tolist() + [track.track_id, track.score, track.cls, track.idx] for track in self.tracked_stracks
-            if track.is_activated]
+            track.tlbr.tolist() + [track.track_id, track.score, track.cls, track.idx]
+            for track in self.tracked_stracks
+            if track.is_activated
+        ]
         return np.asarray(output, dtype=np.float32)
 
     def get_kalmanfilter(self):

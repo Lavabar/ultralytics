@@ -27,7 +27,7 @@ def merge_matches(m1, m2, shape):
 
 def _indices_to_matches(cost_matrix, indices, thresh):
     matched_cost = cost_matrix[tuple(zip(*indices))]
-    matched_mask = (matched_cost <= thresh)
+    matched_mask = matched_cost <= thresh
 
     matches = indices[matched_mask]
     unmatched_a = tuple(set(range(cost_matrix.shape[0])) - set(matches[:, 0]))
@@ -61,9 +61,7 @@ def linear_assignment(cost_matrix, thresh, use_lap=True):
 
 def ious(atlbrs, btlbrs):
     """
-    Compute cost based on IoU
-    :type atlbrs: list[tlbr] | np.ndarray
-    :type atlbrs: list[tlbr] | np.ndarray
+    Compute cost based on IoU :type atlbrs: list[tlbr] | np.ndarray :type atlbrs: list[tlbr] | np.ndarray.
 
     :rtype ious np.ndarray
     """
@@ -77,15 +75,14 @@ def ious(atlbrs, btlbrs):
 
 def iou_distance(atracks, btracks):
     """
-    Compute cost based on IoU
-    :type atracks: list[STrack]
-    :type btracks: list[STrack]
+    Compute cost based on IoU :type atracks: list[STrack] :type btracks: list[STrack]
 
     :rtype cost_matrix np.ndarray
     """
 
-    if (len(atracks) > 0 and isinstance(atracks[0], np.ndarray)) \
-            or (len(btracks) > 0 and isinstance(btracks[0], np.ndarray)):
+    if (len(atracks) > 0 and isinstance(atracks[0], np.ndarray)) or (
+        len(btracks) > 0 and isinstance(btracks[0], np.ndarray)
+    ):
         atlbrs = atracks
         btlbrs = btracks
     else:
@@ -97,15 +94,14 @@ def iou_distance(atracks, btracks):
 
 def v_iou_distance(atracks, btracks):
     """
-    Compute cost based on IoU
-    :type atracks: list[STrack]
-    :type btracks: list[STrack]
+    Compute cost based on IoU :type atracks: list[STrack] :type btracks: list[STrack]
 
     :rtype cost_matrix np.ndarray
     """
 
-    if (len(atracks) > 0 and isinstance(atracks[0], np.ndarray)) \
-            or (len(btracks) > 0 and isinstance(btracks[0], np.ndarray)):
+    if (len(atracks) > 0 and isinstance(atracks[0], np.ndarray)) or (
+        len(btracks) > 0 and isinstance(btracks[0], np.ndarray)
+    ):
         atlbrs = atracks
         btlbrs = btracks
     else:
@@ -115,7 +111,7 @@ def v_iou_distance(atracks, btracks):
     return 1 - _ious  # cost matrix
 
 
-def embedding_distance(tracks, detections, metric='cosine'):
+def embedding_distance(tracks, detections, metric="cosine"):
     """
     :param tracks: list[STrack]
     :param detections: list[BaseTrack]
@@ -153,7 +149,7 @@ def fuse_motion(kf, cost_matrix, tracks, detections, only_position=False, lambda
     gating_threshold = chi2inv95[gating_dim]
     measurements = np.asarray([det.to_xyah() for det in detections])
     for row, track in enumerate(tracks):
-        gating_distance = kf.gating_distance(track.mean, track.covariance, measurements, only_position, metric='maha')
+        gating_distance = kf.gating_distance(track.mean, track.covariance, measurements, only_position, metric="maha")
         cost_matrix[row, gating_distance > gating_threshold] = np.inf
         cost_matrix[row] = lambda_ * cost_matrix[row] + (1 - lambda_) * gating_distance
     return cost_matrix
@@ -192,8 +188,9 @@ def bbox_ious(box1, box2, eps=1e-7):
     b2_x1, b2_y1, b2_x2, b2_y2 = box2.T
 
     # Intersection area
-    inter_area = (np.minimum(b1_x2[:, None], b2_x2) - np.maximum(b1_x1[:, None], b2_x1)).clip(0) * \
-                 (np.minimum(b1_y2[:, None], b2_y2) - np.maximum(b1_y1[:, None], b2_y1)).clip(0)
+    inter_area = (np.minimum(b1_x2[:, None], b2_x2) - np.maximum(b1_x1[:, None], b2_x1)).clip(0) * (
+        np.minimum(b1_y2[:, None], b2_y2) - np.maximum(b1_y1[:, None], b2_y1)
+    ).clip(0)
 
     # box2 area
     box1_area = (b1_x2 - b1_x1) * (b1_y2 - b1_y1)
